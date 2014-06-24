@@ -186,9 +186,9 @@ class Nodes < Node
 	def cdddar; cxr :ddda; end
 	def cddddr; cxr :dddd; end
 
-#	def each
-#	
-#	end
+	def each
+		@list.each { |x| yield x }
+	end
 end
 
 #----------------------------------------------------------------------------------------------
