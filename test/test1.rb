@@ -51,6 +51,14 @@ END
 		assert_equal y, [1, 2, 3]
 	end
 
+	def test_enum_with_filter
+		y = []
+		numbers = @ne[:numbers].each(:first) do |x|
+			y << x.cadr.to_i
+		end
+		assert_equal y, [1]
+	end
+
 #	def test_that_will_be_skipped
 #	skip "test this later"
 #	refute 0 == 1

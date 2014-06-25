@@ -59,6 +59,8 @@ end
 #----------------------------------------------------------------------------------------------
 
 class Nodes < Node
+	include Enumerable
+
 	def initialize(line, list)
 		super(line)
 		@list = list
@@ -186,8 +188,22 @@ class Nodes < Node
 	def cdddar; cxr :ddda; end
 	def cddddr; cxr :dddd; end
 
-	def each
-		@list.each { |x| yield x }
+	def each(what = nil)
+		if what == nil
+			@list.each { |x| yield x }
+		else
+			what = what.to_s
+			@list.each { |x| yield x if x.to_s == what }
+		end
+	end
+
+	def map(what = nil)
+		if what == nil
+			@list.map { |x| yield x }
+		else
+			what = what.to_s
+			@list.map { |x| yield x if x.to_s == what }
+		end
 	end
 end
 
