@@ -94,6 +94,21 @@ class Nodes < Node
 		@list.map { |node| node.skel }
 	end
 
+	def find(x)
+		return @list[x] if x.is_a? Fixnum
+
+		x = x.to_s
+		i = @list.find_index {|y| y.to_s == x }
+		return @list[i] if i != nil
+
+		# let's try searching for :x
+		x = ":#{x}"
+		i = @list.find_index {|y| y.to_s == x }
+		return nil if i == nil
+
+		@list[i]
+	end
+
 	def node(x)
 		return @list[x] if x.is_a? Fixnum
 
@@ -197,13 +212,48 @@ class Nodes < Node
 		end
 	end
 
-	def map(what = nil)
-		if what == nil
-			@list.map { |x| yield x }
-		else
-			what = what.to_s
-			@list.map { |x| yield x if x.to_s == what }
-		end
+	# filter nodes by 1st element
+	# ((node 1) (node 2) (goat))/:node yields ((node 1) (node 2))
+	def cut(what)
+		y = []
+		each(what) { |x| y << x }
+		return nil if y == []
+		Nodes.new(y[0].line, y)
+	end
+	
+	def /(what)
+		cut(what)
+	end
+	
+	# selects nodes by 2nd element
+	# ((node a foo) (node b bar))/:a yields (foo)
+	# ((node a foo) (node a bar))/:a yields [(foo) (bar)]
+	def s1(what)
+		what = what.to_s
+		bb
+		y = select {|x| ~x.cadr == what}
+		y = y.map {|x| x.drop(2)}
+		y = y[0]
+#		if y[0].count == 1
+			y = y[0]
+			Nodes.new(y[0].line, y)
+#		else
+#			y.map{|x| Nodes.new(x[0].line, x)}
+#		end
+	end
+	
+	def %(what)
+		s1(what)
+	end
+
+	# ((a 1) (b 2) (c 3)) yields [a b c]
+	def rank0
+		map { |x| ~x.car }
+	end
+
+	# ((node a) (node b) (node c)) yields [a b c]
+	def rank1
+		map { |x| ~x.cadr }
 	end
 end
 
@@ -211,7 +261,6 @@ end
 
 class Nexp < Nodes
 	def initialize(stream, *opt, filename: '')
-#		byebug
 		@stream = Stream.new(stream)
 		single = opt.include? :single
 		@line = 0
