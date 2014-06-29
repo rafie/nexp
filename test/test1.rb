@@ -1,7 +1,7 @@
 
 require "minitest/autorun"
 require 'Nexp'
-# require 'byebug'
+require 'byebug'
 
 class Test1 < Minitest::Test
 
@@ -12,6 +12,11 @@ class Test1 < Minitest::Test
 	(third 3))
 (words
 	mary had a little lamb)
+(nodes
+	:name letters
+	(node a 1)
+	(node b 2)
+	(node c 3))
 END
 
 	def setup
@@ -32,7 +37,7 @@ END
 	end
 
 	def test_index
-		assert_equal @ne[:numbers][1][1].to_i, 2
+		assert_equal 2, @ne[:numbers][1][1].to_i, 2
 	end
 
 	def test_node_op
@@ -40,7 +45,7 @@ END
 	end
 
 	def test_cxr
-		assert_equal @ne.cxr(:adada).to_i, 1
+		assert_equal 1, @ne.cxr(:adada).to_i
 	end
 
 	def test_enum
@@ -48,7 +53,7 @@ END
 		numbers = @ne[:numbers].each do |x|
 			y << x.cadr.to_i
 		end
-		assert_equal y, [1, 2, 3]
+		assert_equal [1, 2, 3], y
 	end
 
 	def test_enum_with_filter
@@ -56,7 +61,23 @@ END
 		numbers = @ne[:numbers].each(:first) do |x|
 			y << x.cadr.to_i
 		end
-		assert_equal y, [1]
+		assert_equal [1] , y
+	end
+
+	def test_cut
+		assert_equal [["node", "a", "1"], ["node", "b", "2"], ["node", "c", "3"]], ~(@ne[:nodes]/:node)
+	end
+	
+	def test_sel1
+		assert_equal %w(2), ~((@ne[:nodes]/:node)%:b)
+	end
+
+	def test_rank1
+		assert_equal %w(first second third), @ne[:numbers].rank0
+	end
+
+	def test_rank2
+		assert_equal %w(a b c), (@ne[:nodes]/:node).rank1
 	end
 
 #	def test_that_will_be_skipped

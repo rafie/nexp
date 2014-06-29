@@ -225,25 +225,31 @@ class Nodes < Node
 		cut(what)
 	end
 	
+	def sel0(what)
+		node(what)
+	end
+
 	# selects nodes by 2nd element
-	# ((node a foo) (node b bar))/:a yields (foo)
-	# ((node a foo) (node a bar))/:a yields [(foo) (bar)]
-	def s1(what)
+	# ((node a foo) (node b bar))%:a yields (foo)
+	# ((node a foo) (node a bar))%:a yields [(foo) (bar)]
+	def sel1(what)
+#		byebug
 		what = what.to_s
-		bb
 		y = select {|x| ~x.cadr == what}
+		return nil if y == []
 		y = y.map {|x| x.drop(2)}
+		return nil if y == []
 		y = y[0]
 #		if y[0].count == 1
 			y = y[0]
-			Nodes.new(y[0].line, y)
+			Nodes.new(y.line, [y])
 #		else
 #			y.map{|x| Nodes.new(x[0].line, x)}
 #		end
 	end
 	
 	def %(what)
-		s1(what)
+		sel1(what)
 	end
 
 	# ((a 1) (b 2) (c 3)) yields [a b c]
