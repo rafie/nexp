@@ -1,0 +1,55 @@
+(lots
+	(lot
+		(name1 a b c) x y)
+	(lot
+		(name2 d e f) v w)
+)
+
+(lots
+	(lot name1
+		(x a b c) v)
+	(lot name2
+		(y d e f) w)
+)
+
+
+ne["lots/lot/name2"]
+ne[:lots].cut(:lot).sel1(:name2)
+
+ne["lots"]
+
+(
+	(lot
+		(name1 a b c) x y)
+	(lot
+		(name2 d e f) v w)
+)
+
+(
+	(lot name1
+		(x a b c))
+	(lot name2
+		(y d e f))
+)
+
+ne["lots/lot"]
+
+(
+	((name1 a b c) x y)
+	((name2 d e f) v w)
+)
+
+(
+	(name1
+		(x a b c))
+	(name2
+		(y d e f))
+)
+
+ne["lots/lot/name2"]
+
+(d e f)
+
+(
+	(y d e f) w
+)
