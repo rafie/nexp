@@ -145,6 +145,7 @@ class Nodes < Node
 			n = @list[i]
 			cdr = n.list.drop(1)
 		end
+		return Nodes.new(n.line, []) if cdr.size == 0
 		return cdr[0] if cdr.size == 1
 		Nodes.new(cdr[0].line, cdr)
 	end
