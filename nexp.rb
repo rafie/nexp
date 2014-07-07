@@ -54,6 +54,14 @@ class Atom < Node
 	def value=(x)
 		@text = x
 	end
+
+	def car
+		self
+	end
+
+	def cdr
+		Nodes.new(0, [])
+	end
 end
 
 #----------------------------------------------------------------------------------------------

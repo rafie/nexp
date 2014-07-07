@@ -105,3 +105,23 @@ END
 		assert_equal ~@ne[:numbers][:more], ["4", "5", "6"]
 	end
 end
+
+class Test3 < Minitest::Test
+	@@nexp = <<END
+(numbers
+	first
+	(second 2)
+	(third 3)
+	(forth 4))
+END
+
+	# test if it is possible to ommit brackets around 'first'
+	def setup
+		@ne = Nexp.from_string(@@nexp, :single)
+	end
+
+	def test_numbers
+		assert_equal @ne[:numbers][:first].to_i, 1
+		assert_equal @ne[:numbers][:second].to_i, 2
+	end
+end
