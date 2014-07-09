@@ -78,7 +78,7 @@ class Test1 < Minitest::Test
 	end
 
 	def test_1
-		assert_equal [], find([['a', 1], 'b', 'c'], 'a')
+		assert_equal [], find(['a', 'b', 'c'], 'a')
 	end
 	
 	def test_first
