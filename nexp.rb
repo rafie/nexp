@@ -9,13 +9,54 @@ class Node
 	def initialize(line)
 		@line = line
 	end
-	
+
+	def atom? ; false ; end
+	def list? ; false ; end
+	def nil? ; false ; end
+
 	def +@
 		list?
 	end
 	
 	def ~
 		skel
+	end
+
+	def to_str
+		to_s
+	end
+	
+end
+
+#----------------------------------------------------------------------------------------------
+
+class Nil < Node
+	def initialize
+		super(0)
+	end
+
+	def list?
+		true
+	end
+
+	def nil?
+		true
+	end
+
+	def to_s
+		""
+	end
+
+	def skel
+		[]
+	end
+
+	def car
+		self
+	end
+
+	def cdr
+		Nodes.new(0, [])
 	end
 end
 
@@ -38,7 +79,7 @@ class Atom < Node
 	def to_s
 		@text
 	end
-	
+
 	def to_i
 		@text.to_i
 	end
@@ -126,7 +167,7 @@ class Nodes < Node
 			# let's try searching for :x
 			x = ":#{x}"
 			i = @list.find_index {|y| y.to_s == x }
-			return nil if i == nil
+			return Nil.new if i == nil
 
 			if @list[i].atom?
 				# (:a b c)[:a] yields b

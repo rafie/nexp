@@ -1,5 +1,5 @@
 
-require "minitest/autorun"
+require 'minitest/autorun'
 require 'Nexp'
 require 'byebug'
 
@@ -21,9 +21,6 @@ END
 
 	def setup
 		@ne = Nexp.from_string(@@nexp)
-#		byebug
-		a = ~@ne[:numbers]
-		z=1
 	end
 	
 	def test_find_atom
@@ -79,11 +76,6 @@ END
 	def test_rank2
 		assert_equal %w(a b c), (@ne[:nodes]/:node).rank1
 	end
-
-#	def test_that_will_be_skipped
-#	skip "test this later"
-#	refute 0 == 1
-#	end
 end
 
 class Test2 < Minitest::Test
@@ -115,7 +107,8 @@ class Test3 < Minitest::Test
 	(forth 4))
 END
 
-	# test if it is possible to ommit brackets around 'first'
+	# test if it is possible to omit brackets around 'first'
+
 	def setup
 		@ne = Nexp.from_string(@@nexp, :single)
 	end

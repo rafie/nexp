@@ -1,7 +1,9 @@
 
-require "minitest/autorun"
+require 'minitest/autorun'
 require 'Nexp'
-require 'byebug'
+
+# this is not actually a Nexp test but rather an experiment of the nexp semantics
+# using plain nested array.
 
 class Test1 < Minitest::Test
 
@@ -69,7 +71,6 @@ class Test1 < Minitest::Test
 	end
 	
 	def test_first
-#		byebug
 		assert_equal [[:second, 2], [:third, :a, :b, :c], :forth, 4, [:fifth]], find(@x, :first)
 	end
 
