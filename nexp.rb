@@ -3,11 +3,29 @@ require 'byebug'
 
 #----------------------------------------------------------------------------------------------
 
-class Node
-	attr_reader :line
+module Nexp
 
-	def initialize(line)
-		@line = line
+#----------------------------------------------------------------------------------------------
+
+class Pos
+	attr_reader :line, :pad
+
+	def initialize(line = 0, pad = "")
+		@line, @pad = line, pad
+	end
+end
+
+#----------------------------------------------------------------------------------------------
+
+class Node
+	attr_reader :start, :end
+
+	def initialize(pos)
+		if pos.is_a? Array
+			@start, @end = *pos
+		else
+			@start = pos
+		end
 	end
 
 	def atom? ; false ; end
@@ -26,6 +44,18 @@ class Node
 		to_s
 	end
 	
+
+	def line
+		start.line
+	end
+
+	def pos
+		if !@end
+			@start
+		else
+			[@start, @end]
+		end
+	end
 end
 
 #----------------------------------------------------------------------------------------------
@@ -63,9 +93,11 @@ end
 #----------------------------------------------------------------------------------------------
 
 class Atom < Node
-	def initialize(line, s)
-		super(line)
-		@text = s
+	attr_reader :text
+
+	def initialize(text, pos = Pos.new)
+		super(pos)
+		@text = text
 	end
 
 	def list?
@@ -101,7 +133,7 @@ class Atom < Node
 	end
 
 	def cdr
-		Nodes.new(0, [])
+		Nodes.new([], 0)
 	end
 end
 
@@ -110,8 +142,8 @@ end
 class Nodes < Node
 	include Enumerable
 
-	def initialize(line, list)
-		super(line)
+	def initialize(list = [], pos = Pos.new)
+		super(pos)
 		@list = list
 	end
 
@@ -186,8 +218,9 @@ class Nodes < Node
 			n = @list[i]
 			cdr = n.list.drop(1)
 		end
+		return Nodes.new([], n.pos) if cdr.size == 0
 		return cdr[0] if cdr.size == 1
-		Nodes.new(cdr[0].line, cdr)
+		Nodes.new(cdr, cdr[0].pos)
 	end
 
 	def [](x)
@@ -214,7 +247,7 @@ class Nodes < Node
 				y = y[0]
 			when 'd'
 				return nil if y.size == 1
-				y = Nodes.new(y[1].line, y.list.drop(1))
+				y = Nodes.new(y.list.drop(1), y[1].pos)
 			else
 				raise "invalid cxr specification"
 		end
@@ -267,7 +300,7 @@ class Nodes < Node
 		y = []
 		each(what) { |x| y << x }
 		return nil if y == []
-		Nodes.new(y[0].line, y)
+		Nodes.new(y, y[0].pos)
 	end
 	
 	def /(what)
@@ -282,7 +315,6 @@ class Nodes < Node
 	# ((node a foo) (node b bar))%:a yields (foo)
 	# ((node a foo) (node a bar))%:a yields [(foo) (bar)]
 	def sel1(what)
-#		byebug
 		what = what.to_s
 		y = select {|x| ~x.cadr == what}
 		return nil if y == []
@@ -291,9 +323,9 @@ class Nodes < Node
 		y = y[0]
 #		if y[0].count == 1
 			y = y[0]
-			Nodes.new(y.line, [y])
+			Nodes.new([y], y.pos)
 #		else
-#			y.map{|x| Nodes.new(x[0].line, x)}
+#			y.map{|x| Nodes.new(x, x[0].pos)}
 #		end
 	end
 	
@@ -310,6 +342,109 @@ class Nodes < Node
 	def rank1
 		map { |x| ~x.cadr }
 	end
+
+	def text1(line = 1)
+		s = ''
+		@list.each do |node|
+			while line < node.start.line
+				line += 1
+				s += "\n"
+			end
+			if node.atom?
+				s += node.start.pad + node.text
+			else
+				t = node.text(line)
+				s += node.start.pad + '(' + t
+				line += t.count("\n")
+				while line < node.end.line
+					line += 1
+					s += "\n"
+				end
+				s += node.end.pad + ')'
+			end
+		end
+		s
+	end
+
+	class Print
+		def initialize(nodes)
+			@nodes = nodes
+			@line = nodes.start.line
+		end
+
+		def print(nodes = nil)
+			nodes = @nodes if !nodes
+			s = ''
+			nodes.list.each do |node|
+				while @line < node.start.line
+					@line += 1
+					s += "\n"
+				end
+				if node.atom?
+					s += node.start.pad + node.text
+				else
+					s += node.start.pad + '(' + print(node)
+					while @line < node.end.line
+						@line += 1
+						s += "\n"
+					end
+					s += node.end.pad + ')'
+				end
+			end
+			s
+		end
+	end
+
+	def text
+		Print.new(self).print
+	end
+
+end
+
+#----------------------------------------------------------------------------------------------
+
+class Stream
+	attr_reader :line, :col
+	
+	def initialize(stream)
+		@stream = stream
+		@line = 1
+		@col = 0
+		@newline = false
+		@linebuf = ''
+	end
+
+	def read
+		@col += 1
+		c = @stream.getc
+		@linebuf += c
+		if @newline
+			@col = 0
+			@line += 1
+			while c == "#"
+				@stream.fgets
+				c = @stream.getc
+			end
+		end
+		@newline = c == "\n"
+		if @newline
+			@linebuf1 = @linebuf
+			@linebuf = ''
+		end
+		return c
+	end
+
+	def atEnd?
+		@stream.eof?
+	end
+	
+	def >>(x)
+		x = read
+	end
+
+	def pos
+		[@line, @col]
+	end
 end
 
 #----------------------------------------------------------------------------------------------
@@ -319,6 +454,7 @@ class Nexp < Nodes
 		@stream = Stream.new(stream)
 		single = opt.include? :single
 		@line = 0
+		@list_tops = []
 		@list = single ? read.list[0].list : read.list
 	end
 
@@ -332,11 +468,12 @@ class Nexp < Nodes
 
 	def read(root = true)
 		nodes_list = []
-		start_line = @line
 		token = ""
+		pad = ""
 		state = :sep
 		loop do
 			c = @stream.read
+			@line = @stream.line
 			read_ch = false
 			while !read_ch do
 				case state
@@ -357,13 +494,13 @@ class Nexp < Nodes
 										# token = c
 										state = :atom
 									else
+										pad += c
 										read_ch = true
 									end
 							end
 						end
 
 					when :newline
-						++@line
 						if c == "#"
 							read_ch = true
 							state = :comment
@@ -377,8 +514,9 @@ class Nexp < Nodes
 
 					when :atom
 						if @stream.atEnd? || Nexp.sep?(c)
-							nodes_list << Atom.new(@line, token)
+							nodes_list << Atom.new(token, Pos.new(@line, pad))
 							token = ""
+							pad = ""
 							state = :sep
 						else
 							c = @stream.read if Nexp.esc?(c)
@@ -387,6 +525,8 @@ class Nexp < Nodes
 						end
 
 					when :list
+						@list_tops.push(Pos.new(@line, pad))
+						pad = ""
 						nodes = read(false)
 						if !nodes.empty?
 							nodes_list << nodes
@@ -398,7 +538,7 @@ class Nexp < Nodes
 
 					when :end
 						raise "expected ) at end of file" if !root && c != ")"
-						return Nodes.new(start_line, nodes_list)
+						return Nodes.new(nodes_list, [@list_tops.pop, Pos.new(@line, pad)])
 
 					else
 						raise "invalid state"
@@ -419,41 +559,10 @@ class Nexp < Nodes
 		c <= " " || c == "(" || c == ")"
 	end
 
-	#------------------------------------------------------------------------------------------
+end # class Nexp
 
-	class Stream
-		attr_reader :line, :col
-		
-		def initialize(stream)
-			@stream = stream
-			@line = 0
-			@col = 0
-			@newline = false
-		end
+#----------------------------------------------------------------------------------------------
 
-		def read
-			++@col
-			c = @stream.getc
-			if @newline
-				@col = 0
-				++@line
-				while c == "#"
-					@stream.fgets
-					c = @stream.getc
-				end
-			end
-			@newline = c == '\n'
-			return c
-		end
-	
-		def atEnd?
-			@stream.eof?
-		end
-		
-		def >>(x)
-			x = read
-		end
-	end
-end
+end # module NEXP
 
 #----------------------------------------------------------------------------------------------

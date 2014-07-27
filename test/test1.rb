@@ -103,8 +103,9 @@ class Test3 < Minitest::Test
 (numbers
 	first
 	(second 2)
-	(third 3)
-	(forth 4))
+	(third a b c)
+	:forth 4
+	(fifth))
 END
 
 	# test if it is possible to omit brackets around 'first'
@@ -113,8 +114,31 @@ END
 		@ne = Nexp.from_string(@@nexp, :single)
 	end
 
-	def test_numbers
-		assert_equal @ne[:numbers][:first].to_i, 1
-		assert_equal @ne[:numbers][:second].to_i, 2
+	def test_first
+		assert_equal [["second", "2"], ["third", "a", "b", "c"], ":forth", "4", ["fifth"]], ~@ne[:numbers][:first]
+	end
+
+	def test_second
+		assert_equal '2', ~@ne[:numbers][:second]
+	end
+
+	def test_third
+		assert_equal ['a', 'b', 'c'] , ~@ne[:numbers][:third]
+	end
+
+	def test_forth
+		assert_equal "4", ~@ne[:numbers][:forth]
+	end
+
+	def test_fifth
+		assert_equal [], ~@ne[:numbers][:fifth]
+	end
+
+	def test_sixth
+		assert_equal nil, @ne[:numbers][:sixth]
+	end
+
+	def test_map_car
+		assert_equal %w(first second third forth fifth), @ne[:numbers].map { |x| ~x.car }
 	end
 end
