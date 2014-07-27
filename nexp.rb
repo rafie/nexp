@@ -18,7 +18,7 @@ end
 #----------------------------------------------------------------------------------------------
 
 class Node
-	attr_reader :start, :end
+	attr_reader :start, :end, :free
 
 	def initialize(pos)
 		if pos.is_a? Array
@@ -302,60 +302,59 @@ class Nodes < Node
 		map { |x| ~x.cadr }
 	end
 
-	def text1(line = 1)
-		s = ''
-		@list.each do |node|
-			while line < node.start.line
-				line += 1
-				s += "\n"
-			end
-			if node.atom?
-				s += node.start.pad + node.text
-			else
-				t = node.text(line)
-				s += node.start.pad + '(' + t
-				line += t.count("\n")
-				while line < node.end.line
-					line += 1
-					s += "\n"
-				end
-				s += node.end.pad + ')'
-			end
-		end
-		s
-	end
-
 	class Print
-		def initialize(nodes)
-			@nodes = nodes
+		def initialize(nodes, *opt)
 			@line = nodes.start.line
+			free = nodes.free || opt.include?(:free)
+			@indent = nodes.start.pad
+			@newline = true
+
+			@s = ''
+			@s += pad(nodes.start) + '(' if !free
+			@s += print(nodes)
+			@s += (nodes.end ? pad(nodes.end) : '') + ')' if !free
 		end
 
-		def print(nodes = nil)
-			nodes = @nodes if !nodes
+		def to_s
+			@s
+		end
+
+		private
+
+		def pad(pos)
+			return pos.pad if !@newline
+			s = pos.pad
+			s.index(@indent) == 0 ? s[@indent.length..-1] : s
+		end
+
+		def print(nodes)
 			s = ''
 			nodes.list.each do |node|
 				while @line < node.start.line
 					@line += 1
 					s += "\n"
+					@newline = true
 				end
 				if node.atom?
-					s += node.start.pad + node.text
+					s += pad(node.start) + node.text
 				else
-					s += node.start.pad + '(' + print(node)
+					s += pad(node.start) + '(' + print(node)
 					while @line < node.end.line
 						@line += 1
 						s += "\n"
+						@newline = true
 					end
-					s += node.end.pad + ')'
+					s += pad(node.end) + ')'
 				end
+				@newline = false
 			end
 			s
 		end
 	end
 
-	def text
-		Print.new(self).print
+	# optinos: :free - do not wrap in ()
+	def text(*opt)
+		Print.new(self, *opt).to_s
 	end
 
 end
@@ -400,10 +399,6 @@ class Stream
 	def >>(x)
 		x = read
 	end
-
-	def pos
-		[@line, @col]
-	end
 end
 
 #----------------------------------------------------------------------------------------------
@@ -411,17 +406,23 @@ end
 class Nexp < Nodes
 	def initialize(stream, *opt, filename: '')
 		@stream = Stream.new(stream)
-		single = opt.include? :single
+		@single = opt.include? :single
+
 		@line = 0
-		@list_tops = []
-		@list = single ? read.list[0].list : read.list
+		@list_tops = @single ? [] : [Pos.new(1, "")]
+		nodes = read
+		nodes = nodes[0] if @single
+
+		@list = nodes.list
+		@start, @end = nodes.start, nodes.end
+		@free = !@single
 	end
 
-	def Nexp.from_string(text, *opt)
+	def self.from_string(text, *opt)
 		Nexp.new(StringIO.new(text), *opt)
 	end
 	
-	def Nexp.from_file(fname, *opt)
+	def self.from_file(fname, *opt)
 		Nexp.new(File.open(fname, "r"), *opt, filename: fname)
 	end
 
@@ -506,18 +507,17 @@ class Nexp < Nodes
 		end
 	end
 
-	def Nexp.atom?(c)
+	def self.atom?(c)
 		c > ' '
 	end
 
-	def Nexp.esc?(c)
+	def self.esc?(c)
 		c == "\\"
 	end
 
-	def Nexp.sep?(c)
+	def self.sep?(c)
 		c <= " " || c == "(" || c == ")"
 	end
-
 end # class Nexp
 
 #----------------------------------------------------------------------------------------------

@@ -19,5 +19,9 @@ nexp = <<END
 END
 
 ne = Nexp::Nexp.from_string(nexp)
-puts ne.find(:nodes).text
+puts "=== ne"
+puts ne.text
+puts "=== ne[:nodes]"
+# puts ne.find(:nodes).text
+puts ne[:nodes].text(:free)
 
