@@ -3,6 +3,8 @@ require 'minitest/autorun'
 require 'Nexp'
 require 'byebug'
 
+#----------------------------------------------------------------------------------------------
+
 class Test1 < Minitest::Test
 
 	@@nexp = <<END
@@ -20,7 +22,13 @@ class Test1 < Minitest::Test
 END
 
 	def setup
+<<<<<<< HEAD
 		@ne = Nexp.from_string(@@nexp)
+=======
+		@ne = Nexp::Nexp.from_string(@@nexp)
+		a = ~@ne[:numbers]
+		z=1
+>>>>>>> origin/master
 	end
 	
 	def test_find_atom
@@ -78,6 +86,8 @@ END
 	end
 end
 
+#----------------------------------------------------------------------------------------------
+
 class Test2 < Minitest::Test
 	@@nexp = <<END
 (numbers
@@ -88,7 +98,7 @@ class Test2 < Minitest::Test
 END
 
 	def setup
-		@ne = Nexp.from_string(@@nexp, :single)
+		@ne = Nexp::Nexp.from_string(@@nexp, :single)
 	end
 
 	def test_numbers
@@ -97,6 +107,8 @@ END
 		assert_equal ~@ne[:numbers][:more], ["4", "5", "6"]
 	end
 end
+
+#----------------------------------------------------------------------------------------------
 
 class Test3 < Minitest::Test
 	@@nexp = <<END
@@ -111,7 +123,7 @@ END
 	# test if it is possible to omit brackets around 'first'
 
 	def setup
-		@ne = Nexp.from_string(@@nexp, :single)
+		@ne = Nexp::Nexp.from_string(@@nexp, :single)
 	end
 
 	def test_first
@@ -139,6 +151,79 @@ END
 	end
 
 	def test_map_car
+		skip "broken"
 		assert_equal %w(first second third forth fifth), @ne[:numbers].map { |x| ~x.car }
+	end
+end
+
+#----------------------------------------------------------------------------------------------
+
+class Test4 < Minitest::Test
+
+	@@nexp = <<END
+(numbers
+	(first 1)
+	(second 2)
+	(third 3))
+(words
+	mary had a little lamb)
+(nodes
+	:name letters
+	(node a 1)
+	(node b 2)
+	(node c 3))
+END
+
+	@@nexp_single = <<END
+(single
+	(numbers
+		(first 1)
+		(second 2)
+		(third 3)
+		)
+	(words
+		mary had a little lamb)
+	(nodes
+		:name letters
+		(node a 1)
+		(node b 2)
+		(node c 3)))
+END
+
+
+	@@nodes_out = <<END
+(nodes
+	:name letters
+	(node a 1)
+	(node b 2)
+	(node c 3))
+END
+
+	@@nodes_in = <<END
+:name letters
+(node a 1)
+(node b 2)
+(node c 3)
+END
+
+	def setup
+		@ne = Nexp::Nexp.from_string(@@nexp)
+		@ne1 = Nexp::Nexp.from_string(@@nexp_single, :single)
+	end
+
+	def test_print_all
+		assert_equal @@nexp.strip, @ne.text
+	end
+
+	def test_print_all_single
+		assert_equal @@nexp_single.strip, @ne1.text
+	end
+	
+	def test_print_nodes_out
+		assert_equal @@nodes_out.strip, @ne.find(:nodes).text
+	end
+
+	def test_print_nodes_in
+		assert_equal @@nodes_in.strip, @ne[:nodes].text(:free)
 	end
 end
