@@ -1,0 +1,4 @@
+- support strings in quotes
+	- support \ escape char in strings
+- write nexp to text
+- preserve comments
