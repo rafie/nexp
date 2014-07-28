@@ -61,6 +61,8 @@ end
 #----------------------------------------------------------------------------------------------
 
 class Nil < Node
+	include Enumerable
+
 	def initialize
 		super(0)
 	end
@@ -87,6 +89,9 @@ class Nil < Node
 
 	def cdr
 		Nodes.new(0, [])
+	end
+
+	def each
 	end
 end
 
@@ -414,8 +419,9 @@ class Stream
 	end
 
 	def read
-		@col += 1
 		c = @stream.getc
+		return "" if c == nil
+		@col += 1
 		@linebuf += c
 		if @newline
 			@col = 0
@@ -563,6 +569,6 @@ end # class Nexp
 
 #----------------------------------------------------------------------------------------------
 
-end # module NEXP
+end # module Nexp
 
 #----------------------------------------------------------------------------------------------
