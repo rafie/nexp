@@ -419,6 +419,7 @@ class Stream
 	end
 
 	def read
+		return "" if @stream == nil
 		c = @stream.getc
 		return "" if c == nil
 		@col += 1
@@ -440,7 +441,14 @@ class Stream
 	end
 
 	def atEnd?
-		@stream.eof?
+		return true if @stream == nil
+		if @stream.eof?
+			@stream.close
+			@stream = nil
+			true
+		else
+			false
+		end
 	end
 	
 	def >>(x)
